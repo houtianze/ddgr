@@ -1,5 +1,9 @@
 <h1 align="center">ddgr</h1>
 
+## Hacked to my taste ([Enter] saver)
+- With this mod, you don't need to type [Enter] for single-character commands (e.g. f,p,n,q,1-9,...)
+- *Tip*: To go to index 10 or above, prefix your umber with zero (e.g. for index 10, you type: 010[Enter])
+
 <p align="center">
 <a href="https://github.com/jarun/ddgr/releases/latest"><img src="https://img.shields.io/github/release/jarun/ddgr.svg?maxAge=600" alt="Latest release" /></a>
 <a href="https://aur.archlinux.org/packages/ddgr"><img src="https://img.shields.io/aur/version/ddgr.svg?maxAge=600" alt="AUR" /></a>

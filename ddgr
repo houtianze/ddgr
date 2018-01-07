@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
+
 import argparse
 import collections
 import functools
@@ -70,7 +72,33 @@ USER_AGENT = 'ddgr/{} (textmode; Linux x86_64; 1024x768)'.format(_VERSION_)
 
 text_browsers = ['elinks', 'links', 'lynx', 'w3m', 'www-browser']
 
+single_char_commands = 'npfxq?*123456789'
+
 # Global helper functions
+# https://stackoverflow.com/a/48136131/404271
+if sys.platform == 'win32':
+    import msvcrt
+    getch = msvcrt.getch
+    getche = msvcrt.getche
+else:
+    import sys
+    import termios
+    def __gen_ch_getter(echo):
+        def __fun():
+            fd = sys.stdin.fileno()
+            oldattr = termios.tcgetattr(fd)
+            newattr = oldattr[:]
+            try:
+                lflag = ~termios.ICANON if echo else ~(termios.ICANON | termios.ECHO)
+                newattr[3] &= lflag
+                termios.tcsetattr(fd, termios.TCSADRAIN, newattr)
+                ch = sys.stdin.read(1)
+            finally:
+                termios.tcsetattr(fd, termios.TCSADRAIN, oldattr)
+            return ch
+        return __fun
+    getch = __gen_ch_getter(False)
+    getche = __gen_ch_getter(True)
 
 def open_url(url):
     """Open an URL in the user's default web browser.
@@ -1258,7 +1286,22 @@ class DdgCmd(object):
         enter_count = 0
         while True:
             try:
-                cmd = input(self.prompt)
+                # Behavior change - Save the [Enter] key
+                #  - evaluate each char the user inputs, not till [Enter] is pressed
+                #  - if the char evaluates to a command (e.g. 1-9,q,f,n,...), directly return it as cmd
+                #    (*Tip: to input result index greater than 0, prefix it with zero, e.g. 010)
+                #  - otherwise, read till [Enter] is pressed and return the whole string
+                cmd = ''
+                print(self.prompt)
+                while True:
+                    ch = getche()
+                    if ch == '\n':
+                        break
+                    else:
+                        cmd += ch
+                        if len(cmd) == 1 and ch in single_char_commands:
+                            break
+                    #cmd = input(self.prompt)
             except EOFError:
                 sys.exit(0)
 
@@ -1719,3 +1762,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# vim:set tabstop=4;expandtab;autoident
