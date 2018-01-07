@@ -33,6 +33,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import webbrowser
+import string
 
 try:
     import readline
@@ -89,10 +90,18 @@ else:
             oldattr = termios.tcgetattr(fd)
             newattr = oldattr[:]
             try:
-                lflag = ~termios.ICANON if echo else ~(termios.ICANON | termios.ECHO)
+                if echo:
+                    # disable ctrl character printing, otherwise, backspace will be printed as "^?"
+                    lflag = ~(termios.ICANON | termios.ECHOCTL)
+                else:
+                    lflag = ~(termios.ICANON | termios.ECHO)
                 newattr[3] &= lflag
                 termios.tcsetattr(fd, termios.TCSADRAIN, newattr)
                 ch = sys.stdin.read(1)
+                if echo and ord(ch) == 127: # backspace
+                    # emulate backspace erasing
+                    # https://stackoverflow.com/a/47962872/404271
+                    sys.stdout.write('\b \b')
             finally:
                 termios.tcsetattr(fd, termios.TCSADRAIN, oldattr)
             return ch
@@ -1293,15 +1302,16 @@ class DdgCmd(object):
                 #  - otherwise, read till [Enter] is pressed and return the whole string
                 cmd = ''
                 print(self.prompt)
+                # get first char
+                ch = ''
                 while True:
                     ch = getche()
-                    if ch == '\n':
+                    if ch in string.printable:
                         break
-                    else:
-                        cmd += ch
-                        if len(cmd) == 1 and ch in single_char_commands:
-                            break
-                    #cmd = input(self.prompt)
+                if ch in single_char_commands:
+                    cmd = ch
+                elif ch != '\n':
+                    cmd += input()
             except EOFError:
                 sys.exit(0)
 
